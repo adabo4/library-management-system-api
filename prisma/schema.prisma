@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TitleType {
+  BOOK
+  DVD
+}
+
+model Book {
+  id                  Int    @id @default(autoincrement())
+  author              String
+  name                String
+  availableCopies     Int
+  totalAvailableCopies Int
+  numberOfPages       Int
+  isbn                String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("books")
+}
+
+model Dvd {
+  id                  Int    @id @default(autoincrement())
+  author              String
+  name                String
+  availableCopies     Int
+  totalAvailableCopies Int
+  numberOfChapters    Int
+  numberOfMinutes     Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("dvds")
+}
+
+model Member {
+  id          Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  personalId  String   @unique
+  dateOfBirth DateTime
+
+  messages    Message[]
+  queueItems  QueueItem[]
+  rentals     RentalEntry[]
+
+  @@map("members")
+}
+
+model Message {
+  id            Int      @id @default(autoincrement())
+  memberId      Int
+  messageContext String
+  messageSubject String
+  sendDate      DateTime
+
+  member        Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model QueueItem {
+  id         Int      @id @default(autoincrement())
+  memberId   Int
+  titleId    Int
+  titleType  TitleType
+  timeAdded  DateTime
+  isResolved Boolean  @default(false)
+
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("queue_items")
+}
+
+model RentalEntry {
+  id             Int       @id @default(autoincrement())
+  memberId       Int
+  titleId        Int
+  titleType      TitleType
+  rentedDate     DateTime
+  returnDate     DateTime?
+  timesProlongued Int?     @default(0)
+  isReturned     Boolean   @default(false)
+
+  member         Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("rental_entries")
+}

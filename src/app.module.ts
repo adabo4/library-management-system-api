@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { BooksModule } from './books/books.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { DvdsModule } from './dvds/dvds.module';
+import { MembersModule } from './members/members.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { DvdsModule } from './dvds/dvds.module';
     BooksModule,
     ConfigModule.forRoot({ isGlobal: true }),
     DvdsModule,
+    MembersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

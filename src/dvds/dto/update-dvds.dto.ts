@@ -1,6 +1,6 @@
 // src/dvds/dto/update-dvd.dto.ts
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateDvdDto {
   @IsNotEmpty()
@@ -11,11 +11,11 @@ export class UpdateDvdDto {
   @IsString()
   name: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  availableCopies: number;
+  availableCopies?: number;
 
   @IsNotEmpty()
   @Type(() => Number)

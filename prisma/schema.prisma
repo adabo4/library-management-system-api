@@ -37,8 +37,8 @@ model Dvd {
   name                String
   availableCopies     Int
   totalAvailableCopies Int
-  numberOfChapters    Int
-  numberOfMinutes     Int
+  publishYear         Int
+  numberOfMinutes     Int?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

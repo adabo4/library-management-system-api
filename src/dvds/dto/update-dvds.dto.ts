@@ -1,39 +1,37 @@
 // src/dvds/dto/update-dvd.dto.ts
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class UpdateDvdDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  author?: string;
+  author: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  name?: string;
+  name: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  availableCopies?: number;
+  availableCopies: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  totalAvailableCopies?: number;
+  totalAvailableCopies: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
   @Min(1800)
-  publishYear?: number;
+  publishYear: number;
 
-  // tu si rozhodni:
-  // A) chceš aby update vyžadoval minutes, keď sa posiela:
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  numberOfMinutes?: number;
+  numberOfMinutes: number;
 }

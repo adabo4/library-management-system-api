@@ -1,7 +1,7 @@
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class BookDto {
+export class UpdateBookDto {
   @IsString()
   @IsNotEmpty()
   author: string;
@@ -10,10 +10,11 @@ export class BookDto {
   @IsNotEmpty()
   name: string;
 
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  availableCopies: number;
+  availableCopies?: number;
 
   @Type(() => Number)
   @IsInt()

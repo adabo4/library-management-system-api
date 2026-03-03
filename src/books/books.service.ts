@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BookDto } from './dto/book.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
 
 @Injectable()
 export class BooksService {
@@ -16,11 +17,11 @@ export class BooksService {
     return book;
   }
 
-  create(dto: BookDto) {
+  create(dto: CreateBookDto) {
     return this.prisma.book.create({ data: dto });
   }
 
-  async update(id: number, dto: BookDto) {
+  async update(id: number, dto: UpdateBookDto) {
     await this.getById(id);
     return this.prisma.book.update({ where: { id }, data: dto });
   }

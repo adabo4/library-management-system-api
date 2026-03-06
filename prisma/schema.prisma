@@ -64,7 +64,7 @@ model Message {
   memberId      Int
   messageContext String
   messageSubject String
-  sendDate      DateTime
+  sendDate      DateTime @default(now())
 
   member        Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
@@ -76,7 +76,7 @@ model QueueItem {
   memberId   Int
   titleId    Int
   titleType  TitleType
-  timeAdded  DateTime
+  timeAdded  DateTime @default(now())
   isResolved Boolean  @default(false)
 
   member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -89,9 +89,10 @@ model RentalEntry {
   memberId       Int
   titleId        Int
   titleType      TitleType
-  rentedDate     DateTime
+  rentedDate     DateTime  @default(now())
+  maxReturnDate  DateTime?
   returnDate     DateTime?
-  timesProlongued Int?     @default(0)
+  timesProlongued Int    @default(0)
   isReturned     Boolean   @default(false)
 
   member         Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)

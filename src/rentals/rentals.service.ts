@@ -6,11 +6,16 @@ import {
 import { PrismaService } from 'prisma/prisma.service';
 import { CreateRentalsDto } from './dto/create-rentals.dto';
 import { UpdateRentalsDto } from './dto/update-rentals.dto';
-import { TitleType } from '@prisma/client';
+import { QueueStatus, TitleType } from '@prisma/client';
+import { QueueItemsService } from 'src/queue-items/queue-items.service';
 
 @Injectable()
 export class RentalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private queueItemsService: QueueItemsService,
+  ) {}
+
   private calculateMaxReturnDate(titleType: TitleType): Date {
     const date = new Date();
 
@@ -146,6 +151,23 @@ export class RentalsService {
       throw new NotFoundException(`Member ${dto.memberId} not found`);
     }
 
+    const readyQueueItem = await this.prisma.queueItem.findFirst({
+      where: {
+        titleId: dto.titleId,
+        titleType: dto.titleType,
+        status: QueueStatus.READY,
+      },
+      orderBy: {
+        timeAdded: 'asc',
+      },
+    });
+
+    if (readyQueueItem && readyQueueItem.memberId !== dto.memberId) {
+      throw new BadRequestException(
+        'This title is reserved for another member in queue.',
+      );
+    }
+
     if (dto.titleType === TitleType.BOOK) {
       const book = await this.prisma.book.findUnique({
         where: { id: dto.titleId },
@@ -155,8 +177,55 @@ export class RentalsService {
         throw new NotFoundException(`Book ${dto.titleId} not found`);
       }
 
+      if (readyQueueItem && readyQueueItem.memberId === dto.memberId) {
+        const rental = await this.prisma.$transaction(async (tx) => {
+          const createdRental = await tx.rentalEntry.create({
+            data: {
+              memberId: dto.memberId,
+              titleId: dto.titleId,
+              titleType: dto.titleType,
+              rentedDate: new Date(),
+              maxReturnDate: this.calculateMaxReturnDate(dto.titleType),
+            },
+            include: {
+              member: true,
+            },
+          });
+
+          await tx.queueItem.update({
+            where: { id: readyQueueItem.id },
+            data: { status: QueueStatus.COMPLETED },
+          });
+
+          await tx.book.update({
+            where: { id: dto.titleId },
+            data: { availableCopies: { decrement: 1 } },
+          });
+
+          return createdRental;
+        });
+
+        const rentalWithTitle = await this.attachTitleToRental(rental);
+
+        return {
+          action: 'rented',
+          message: 'Reserved title was successfully rented.',
+          data: rentalWithTitle,
+        };
+      }
+
       if (book.availableCopies <= 0) {
-        throw new BadRequestException('No available copies');
+        const queueItem = await this.queueItemsService.addToQueue({
+          memberId: dto.memberId,
+          titleId: dto.titleId,
+          titleType: dto.titleType,
+        });
+
+        return {
+          action: 'queued',
+          message: 'No available copies. Title was added to queue.',
+          data: queueItem,
+        };
       }
 
       const rental = await this.prisma.$transaction(async (tx) => {
@@ -166,7 +235,6 @@ export class RentalsService {
             titleId: dto.titleId,
             titleType: dto.titleType,
             rentedDate: new Date(),
-            // maxReturnDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
             maxReturnDate: this.calculateMaxReturnDate(dto.titleType),
           },
           include: {
@@ -182,7 +250,13 @@ export class RentalsService {
         return createdRental;
       });
 
-      return this.attachTitleToRental(rental);
+      const rentalWithTitle = await this.attachTitleToRental(rental);
+
+      return {
+        action: 'rented',
+        message: 'Title was successfully rented.',
+        data: rentalWithTitle,
+      };
     }
 
     const dvd = await this.prisma.dvd.findUnique({
@@ -193,8 +267,55 @@ export class RentalsService {
       throw new NotFoundException(`Dvd ${dto.titleId} not found`);
     }
 
+    if (readyQueueItem && readyQueueItem.memberId === dto.memberId) {
+      const rental = await this.prisma.$transaction(async (tx) => {
+        const createdRental = await tx.rentalEntry.create({
+          data: {
+            memberId: dto.memberId,
+            titleId: dto.titleId,
+            titleType: dto.titleType,
+            rentedDate: new Date(),
+            maxReturnDate: this.calculateMaxReturnDate(dto.titleType),
+          },
+          include: {
+            member: true,
+          },
+        });
+
+        await tx.queueItem.update({
+          where: { id: readyQueueItem.id },
+          data: { status: QueueStatus.COMPLETED },
+        });
+
+        await tx.dvd.update({
+          where: { id: dto.titleId },
+          data: { availableCopies: { decrement: 1 } },
+        });
+
+        return createdRental;
+      });
+
+      const rentalWithTitle = await this.attachTitleToRental(rental);
+
+      return {
+        action: 'rented',
+        message: 'Reserved title was successfully rented.',
+        data: rentalWithTitle,
+      };
+    }
+
     if (dvd.availableCopies <= 0) {
-      throw new BadRequestException('No available copies');
+      const queueItem = await this.queueItemsService.addToQueue({
+        memberId: dto.memberId,
+        titleId: dto.titleId,
+        titleType: dto.titleType,
+      });
+
+      return {
+        action: 'queued',
+        message: 'No available copies. Title was added to queue.',
+        data: queueItem,
+      };
     }
 
     const rental = await this.prisma.$transaction(async (tx) => {
@@ -204,7 +325,6 @@ export class RentalsService {
           titleId: dto.titleId,
           titleType: dto.titleType,
           rentedDate: new Date(),
-          // maxReturnDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
           maxReturnDate: this.calculateMaxReturnDate(dto.titleType),
         },
         include: {
@@ -220,7 +340,13 @@ export class RentalsService {
       return createdRental;
     });
 
-    return this.attachTitleToRental(rental);
+    const rentalWithTitle = await this.attachTitleToRental(rental);
+
+    return {
+      action: 'rented',
+      message: 'Title was successfully rented.',
+      data: rentalWithTitle,
+    };
   }
 
   async findAll() {
@@ -329,6 +455,24 @@ export class RentalsService {
         await tx.dvd.update({
           where: { id: returnedRental.titleId },
           data: { availableCopies: { increment: 1 } },
+        });
+      }
+
+      const firstWaitingQueueItem = await tx.queueItem.findFirst({
+        where: {
+          titleId: returnedRental.titleId,
+          titleType: returnedRental.titleType,
+          status: QueueStatus.WAITING,
+        },
+        orderBy: {
+          timeAdded: 'asc',
+        },
+      });
+
+      if (firstWaitingQueueItem) {
+        await tx.queueItem.update({
+          where: { id: firstWaitingQueueItem.id },
+          data: { status: QueueStatus.READY },
         });
       }
 

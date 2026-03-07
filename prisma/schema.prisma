@@ -17,6 +17,12 @@ enum TitleType {
   DVD
 }
 
+enum QueueStatus {
+  WAITING
+  READY
+  COMPLETED
+}
+
 model Book {
   id                  Int    @id @default(autoincrement())
   author              String
@@ -77,10 +83,12 @@ model QueueItem {
   titleId    Int
   titleType  TitleType
   timeAdded  DateTime @default(now())
-  isResolved Boolean  @default(false)
+  status    QueueStatus @default(WAITING)
 
   member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
+  @@unique([memberId, titleId, titleType])
+  @@index([titleId, titleType, timeAdded])
   @@map("queue_items")
 }
 

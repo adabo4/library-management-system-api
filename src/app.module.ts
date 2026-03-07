@@ -7,6 +7,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { DvdsModule } from './dvds/dvds.module';
 import { MembersModule } from './members/members.module';
 import { RentalsModule } from './rentals/rentals.module';
+import { QueueItemsModule } from './queue-items/queue-items.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RentalsModule } from './rentals/rentals.module';
     DvdsModule,
     MembersModule,
     RentalsModule,
+    QueueItemsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

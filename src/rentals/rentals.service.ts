@@ -350,6 +350,12 @@ export class RentalsService {
       throw new NotFoundException(`RentalEntry ${id} not found`);
     }
 
+    if (rental.timesProlongued >= 2) {
+      throw new BadRequestException(
+        `This title cannot be prolonged more than 3 times.`,
+      );
+    }
+
     const updated = await this.prisma.rentalEntry.update({
       where: { id },
       data: {

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDvdDto } from './dto/create-dvd.dto';
 import { UpdateDvdDto } from './dto/update-dvds.dto';
@@ -27,6 +31,19 @@ export class DvdsService {
   }
 
   async remove(id: number) {
+    const activeRental = await this.prisma.rentalEntry.findFirst({
+      where: {
+        titleId: id,
+        titleType: 'DVD',
+        isReturned: false,
+      },
+    });
+
+    if (activeRental) {
+      throw new BadRequestException(
+        'This dvd is currently rented and cannot be deleted.',
+      );
+    }
     await this.getById(id);
     await this.prisma.dvd.delete({ where: { id } });
     return { statusCode: 200 };

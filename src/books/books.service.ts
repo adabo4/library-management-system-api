@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -27,6 +31,19 @@ export class BooksService {
   }
 
   async remove(id: number) {
+    const activeRental = await this.prisma.rentalEntry.findFirst({
+      where: {
+        titleId: id,
+        titleType: 'BOOK',
+        isReturned: false,
+      },
+    });
+
+    if (activeRental) {
+      throw new BadRequestException(
+        'This book is currently rented and cannot be deleted.',
+      );
+    }
     await this.getById(id);
     await this.prisma.book.delete({ where: { id } });
     return { statusCode: 200 };
